@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>四六级词汇连连看</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+      background: linear-gradient(145deg, #1b2b4e 0%, #1e3a5f 100%);
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .game-container {
+      background: rgba(22, 34, 58, 0.9);
+      backdrop-filter: blur(8px);
+      padding: 30px 30px 40px;
+      border-radius: 48px;
+      box-shadow: 0 25px 40px rgba(0, 0, 0, 0.7), 0 0 0 2px #3e5f8a inset;
+      max-width: 850px;
+      width: 100%;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      padding: 0 10px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin: 0;
+      background: linear-gradient(135deg, #f0e6b0, #d4c27e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 5px 10px rgba(0,0,0,0.4);
+      letter-spacing: 1px;
+    }
+
+    .score-panel {
+      background: #0c1a2b;
+      border-radius: 40px;
+      padding: 8px 24px;
+      box-shadow: 0 6px 0 #050b12, 0 10px 20px rgba(0, 0, 0, 0.5);
+      color: #f5e9c4;
+      font-weight: 600;
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .score-panel span {
+      color: #fddb6a;
+      font-size: 2rem;
+      min-width: 50px;
+      text-align: center;
+      text-shadow: 0 0 15px #ffb347;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin: 20px 0 30px;
+    }
+
+    .card {
+      aspect-ratio: 1 / 1;
+      background: linear-gradient(145deg, #f9f3e3, #e5d8b6);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 10px;
+      font-weight: 600;
+      font-size: 1.2rem;
+      color: #1e2a3a;
+      box-shadow: 0 10px 0 #7a6a4b, 0 12px 20px rgba(0, 0, 0, 0.4);
+      transition: all 0.08s ease;
+      cursor: pointer;
+      border: 2px solid #fff3d1;
+      word-break: break-word;
+      line-height: 1.3;
+      position: relative;
+    }
+
+    .card.selected {
+      box-shadow: 0 0 0 6px #ffd966, 0 0 0 10px #af8f3a, 0 12px 20px black;
+      background: #fff7e0;
+      transform: scale(1.02);
+      border: 2px solid #ffbf00;
+    }
+
+    .card.matched {
+      background: #2b4b3a;
+      box-shadow: 0 5px 0 #122116, 0 8px 15px rgba(0, 0, 0, 0.5);
+      color: #b7e4c7;
+      cursor: default;
+      border: 2px solid #84b082;
+      opacity: 0.6;
+      transform: translateY(4px);
+      pointer-events: none;
+    }
+
+    .card.matched::before {
+      content: "✓✓";
+      position: absolute;
+      font-size: 2rem;
+      color: #a3d9a5;
+      opacity: 0.5;
+      font-weight: bold;
+      letter-spacing: -5px;
+    }
+
+    .card.matched span {
+      display: none;
+    }
+
+    .card:active:not(.matched):not(.selected) {
+      transform: scale(0.98);
+      box-shadow: 0 6px 0 #7a6a4b, 0 8px 12px black;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 10px;
+    }
+
+    button {
+      background: #f3d37c;
+      border: none;
+      border-radius: 40px;
+      padding: 14px 32px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1e2a3a;
+      box-shadow: 0 8px 0 #a5833e, 0 10px 20px rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+      transition: 0.08s linear;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button:active {
+      transform: translateY(6px);
+      box-shadow: 0 2px 0 #a5833e, 0 8px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      transform: translateY(4px);
+      box-shadow: 0 4px 0 #6b5a38;
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+
+    .message {
+      font-size: 1.3rem;
+      color: #f0e2b0;
+      font-weight: 600;
+      background: #0b1727b3;
+      padding: 10px 28px;
+      border-radius: 50px;
+      letter-spacing: 0.5px;
+      box-shadow: inset 0 1px 5px #00000055, 0 4px 8px black;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+    }
+
+    /* 适配小屏幕 */
+    @media (max-width: 550px) {
+      .game-container {
+        padding: 20px 15px 30px;
+      }
+      h1 {
+        font-size: 1.6rem;
+      }
+      .score-panel {
+        font-size: 1rem;
+        padding: 6px 16px;
+      }
+      .score-panel span {
+        font-size: 1.5rem;
+      }
+      .grid {
+        gap: 8px;
+      }
+      .card {
+        font-size: 0.9rem;
+        padding: 5px;
+        border-radius: 14px;
+      }
+      button {
+        font-size: 1rem;
+        padding: 10px 16px;
+      }
+      .message {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+        min-height: 50px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="game-container">
+  <div class="header">
+    <h1>📘 四六级连连看</h1>
+    <div class="score-panel">得分 <span id="scoreDisplay">0</span></div>
+  </div>
+
+  <div class="grid" id="gridContainer"></div>
+
+  <div class="controls">
+    <div class="message" id="messageBox">点击单词和释义匹配</div>
+    <button id="resetButton">🔄 新一局</button>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // 四六级词汇库（英文 - 中文释义）共16对（32个卡片）可根据需要调整，这里正好8对=16卡片，但网格4x4=16，所以用8对
+    // 为了方便扩展，动态生成，目前使用8对 = 16卡片，完全适配4x4网格
+    const PAIRS = [
+      { en: 'abandon', zh: '抛弃；放弃' },
+      { en: 'vacant', zh: '空的；空缺的' },
+      { en: 'capacity', zh: '能力；容量' },
+      { en: 'obscure', zh: '模糊的；晦涩的' },
+      { en: 'generate', zh: '产生；发生' },
+      { en: 'sustainable', zh: '可持续的' },
+      { en: 'reluctant', zh: '不情愿的' },
+      { en: 'transform', zh: '转变；改造' }
+    ];
+
+    // 为了测试保证16卡片，如果PAIRS数量不足则补齐，我们正好8对
+    // 如果有需要可以修改，但暂时固定8对
+
+    const gridContainer = document.getElementById('gridContainer');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const messageBox = document.getElementById('messageBox');
+    const resetButton = document.getElementById('resetButton');
+
+    let cards = [];             // 当前卡片数据数组 { id, pairId, type, text, matched }
+    let selectedIndex = null;  // 当前选中卡片的下标
+    let score = 0;            // 匹配成功次数 (每对+1分，总共8分)
+    let lock = false;         // 防止在动画/匹配过程中再次点击
+
+    // 辅助: 随机打乱数组
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // 根据词汇数据生成卡片 (16张)
+    function generateCards() {
+      const newCards = [];
+      PAIRS.forEach((pair, pairId) => {
+        // 英文卡片
+        newCards.push({
+          id: `e-${pairId}-${Date.now()}-${Math.random()}`,
+          pairId: pairId,
+          type: 'en',
+          text: pair.en,
+          matched: false
+        });
+        // 中文卡片
+        newCards.push({
+          id: `c-${pairId}-${Date.now()}-${Math.random()}`,
+          pairId: pairId,
+          type: 'zh',
+          text: pair.zh,
+          matched: false
+        });
+      });
+      // 打乱顺序
+      return shuffleArray(newCards);
+    }
+
+    // 更新UI网格
+    function renderGrid() {
+      let html = '';
+      cards.forEach((card, index) => {
+        let classes = 'card';
+        if (card.matched) classes += ' matched';
+        if (selectedIndex === index && !card.matched) classes += ' selected';
+
+        // 内容：如果是已匹配，不显示文字，用伪元素✓✓；否则显示文字
+        const content = card.matched ? '' : `<span>${card.text}</span>`;
+        html += `<div class="${classes}" data-index="${index}">${content}</div>`;
+      });
+      gridContainer.innerHTML = html;
+
+      // 更新得分显示
+      scoreDisplay.textContent = score;
+
+      // 如果得分等于总对数，显示胜利消息
+      if (score === PAIRS.length) {
+        messageBox.textContent = '🎉 太棒了！全部匹配成功！';
+      } else {
+        // 正常消息通过别的地方更新，不清空
+      }
+    }
+
+    // 重置选中状态 (不清除卡片匹配)
+    function clearSelected() {
+      selectedIndex = null;
+    }
+
+    // 检查是否胜利，如果胜利，更新消息
+    function checkVictory() {
+      if (score === PAIRS.length) {
+        messageBox.textContent = '🎉 太棒了！全部匹配成功！';
+        return true;
+      }
+      return false;
+    }
+
+    // 处理卡片点击
+    function handleCardClick(e) {
+      const cardDiv = e.target.closest('.card');
+      if (!cardDiv) return;
+      if (lock) return; // 锁定中
+
+      const index = parseInt(cardDiv.dataset.index, 10);
+      const currentCard = cards[index];
+
+      // 如果卡片已匹配 或 不存在
+      if (!currentCard || currentCard.matched) return;
+
+      // 如果已经选中了同一个卡片 -> 取消选中
+      if (selectedIndex === index) {
+        selectedIndex = null;
+        renderGrid();
+        messageBox.textContent = '已取消选择';
+        return;
+      }
+
+      // 如果没有选中任何卡片 -> 选中该卡片
+      if (selectedIndex === null) {
+        selectedIndex = index;
+        renderGrid();
+        messageBox.textContent = `已选中: ${currentCard.text}`;
+        return;
+      }
+
+      // ---------- 已选中一张卡片，点击第二张 ----------
+      const firstCard = cards[selectedIndex];
+      const secondCard = currentCard;
+
+      // 防止选到同一个卡片（已在上方处理，但加个保险）
+      if (selectedIndex === index) return;
+
+      // 判断配对条件：属于同一个pairId，且一个是英文一个是中文
+      const isPair = (firstCard.pairId === secondCard.pairId) && (firstCard.type !== secondCard.type);
+
+      // 配对成功
+      if (isPair) {
+        // 锁定，防止连续点击
+        lock = true;
+
+        // 标记两张卡片为已匹配
+        firstCard.matched = true;
+        secondCard.matched = true;
+
+        // 增加得分（每对加1分）
+        score += 1;
+
+        // 清除选中
+        clearSelected();
+
+        // 重新渲染（会更新得分显示）
+        renderGrid();
+
+        // 更新消息
+        messageBox.textContent = `✅ 正确！ +1 分 (${firstCard.text} ⇔ ${secondCard.text})`;
+
+        // 检查是否胜利
+        checkVictory();
+
+        // 解锁（短延迟防止用户快速点击下一对时出错，但可立即点击，不延迟也没问题）
+        // 由于使用动画感不强，立刻解锁即可，不过为了流畅，重置lock
+        lock = false;
+
+        // 如果没有胜利，并且选中状态已清空，继续；也可以自动清除消息稍后
+        // 但消息已经更新
+      } else {
+        // 配对失败
+        messageBox.textContent = `❌ 配对错误，再试试看`;
+        // 取消选中
+        selectedIndex = null;
+        renderGrid();
+
+        // 短暂锁定防止快速点击引起视觉混乱
+        lock = true;
+        setTimeout(() => {
+          lock = false;
+        }, 250);
+
+        // 错误时没有得分变化
+      }
+    }
+
+    // 初始化/重置游戏
+    function resetGame() {
+      // 清空选中
+      selectedIndex = null;
+      lock = false;
+      // 重置分数
+      score = 0;
+      // 生成新的卡片数据（完全随机）
+      cards = generateCards();
+      // 渲染网格
+      renderGrid();
+      // 重置消息
+      messageBox.textContent = '点击单词和释义匹配';
+    }
+
+    // 事件监听
+    gridContainer.addEventListener('click', handleCardClick);
+
+    resetButton.addEventListener('click', () => {
+      resetGame();
+    });
+
+    // 初次启动
+    resetGame();
+
+    // 额外逻辑：在匹配成功后如果胜利，消息已经是胜利了。但如果resetGame会重置消息。
+    // 此外在handleCardClick中配对错误会修改selectedIndex并重新渲染，但lock会短期阻止点击
+    // 解决了同时点击两个卡片的问题
+
+    // 注意：配对成功时我们直接mark两个卡片matched，然后重新渲染。此时选中的索引被置空。
+    // 并且因为卡片已经matched，无法再次点击。
+    // 为了允许用户继续配对，lock在立即就设置false了。但是如果在配对成功瞬间用户又点击了某张未匹配卡，
+    // 可能会立即选中，因为lock=false，没问题，逻辑正确。
+    // 实际上配对成功不需要lock，仅防止快速点击配对失败时出问题。成功立刻解锁完全OK。
+
+    // 但是为了视觉上的感觉，配对成功不用lock，上面已设lock=true并立即false，没影响。
+    // 另外，配对成功时如果用户点击了已匹配卡片会忽略，逻辑正确。
+
+    // 还有一种情况：用户选中第一个卡片，然后点击另一个卡片配对失败，selectedIndex置null，lock在250ms内为true，
+    // 防止用户在错误动画中点击。之后用户可以重新选。完美。
+
+    // 显示得分在renderGrid已经更新。
+
+    // 额外优化：当所有卡片匹配完，不再允许点击，但卡片已pointer-events: none (matched类)
+    // 所以没问题。
+  })();
+</script>
+</body>
+  </html>
